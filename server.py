@@ -4,6 +4,7 @@ import socket
 from socket import AF_INET, SOCK_STREAM
 from threading import Thread
 import sys
+import re
 
 def accept_incoming_connections():
     """Sets up handling for incoming clients."""
@@ -26,8 +27,9 @@ def handle_client(client):  # Takes client socket as argument.
 
     while True:
         msg = client.recv(BUFSIZ)
-        #Aqui se tiene que diferenciar el unicast de multicast y broadcast
-        if msg =bytes("/"+,"utf8")
+        #Aqui se tiene que diferenciar el unicast de multicast y broadcast \/\w.*
+        if bool(re.search(r'\S*::.*', bytes(msg).decode("utf8"))):
+            unicast(msg,name)
         if msg != bytes("{quit}", "utf8"):
             broadcast(msg, name+": ")
         else:
@@ -50,9 +52,12 @@ def broadcast(msg, prefix=""):  # prefix is for name identification.
     for sock in clients:
         sock.send(bytes(prefix, "utf8")+msg)
 
-#def multicast()
-#def unicast(msg,name):
-
+def multicast()
+def unicast(msg,name):
+    nameunicast = re.findall(r'\w*(?=::)',bytes(msg).decode("utf8"))
+    msgunicast = re.findall(r'(?<=::).*',bytes(msg).decode("utf8"))
+    clientunicast = list(clients.keys())[list(clients.values()).index(nameunicast[0])]
+    clientunicast.send(bytes(name+":"+msgunicast[0],"utf8"))
 
         
 clients = {}
