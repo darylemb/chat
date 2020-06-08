@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-"""Server for multithreaded (asynchronous) chat application."""
 import socket
 from socket import AF_INET, SOCK_STREAM
 from threading import Thread
@@ -7,58 +5,51 @@ import sys
 import re
 
 def accept_incoming_connections():
-    """Sets up handling for incoming clients."""
+    """Revisa las conexiones entrantes"""
     while True:
         client, client_address = SERVER.accept()
-        print("%s:%s has connected." % client_address)
-        client.send(bytes("Greetings from the cave! Now type your name and press enter!", "utf8"))
+        print("%s:%s Se ha conectado." % client_address)
+        client.send(bytes("Bienvenido al chat, ingresa tu nickname y presiona ENTER!", "utf8"))
         addresses[client] = client_address
-        Thread(target=handle_client, args=(client,)).start()
+        Thread(target=handle_client, args=(client,)).start()#Crea un hilo cada vez que se recibe un mensaje de un usuario
 
-
-def handle_client(client):  # Takes client socket as argument.
-    """Handles a single client connection."""
+def handle_client(client):
+    """Gestiona un envío de un cliente"""
     name = client.recv(BUFSIZ).decode("utf8")
-    welcome = 'Welcome %s! If you ever want to quit, type {quit} to exit.' % name
+    welcome = 'Bienvenido %s! Si deseas salir escribe {salir} para dejar la sala.' % name
     client.send(bytes(welcome, "utf8"))
-    msg = "%s has joined the chat!" % name
+    msg = "%s se ha unido al chat!" % name
     broadcast(bytes(msg, "utf8"))
-    clients[client] = name
+    clients[client] = name #Diccionario que asigna a una llave de tipo client (objeto socket) el valor nickname, que se empleará para distingur a los usuarios destinos 
 
     while True:
         msg = client.recv(BUFSIZ)
-        #Aqui se tiene que diferenciar el unicast de multicast y broadcast \/\w.*
-        if bool(re.search(r'\S*::.*', bytes(msg).decode("utf8"))):
-            unicast(msg,name)
-        if msg != bytes("{quit}", "utf8"):
+        if bool(re.search(r'.*::.*', bytes(msg).decode("utf8"))):#Mediante expresiones regulares se identifica si el mmensajes para una persona (unicast) o muchas personas(multicast)
+            multicast(msg,name)
+        elif msg != bytes("{salir}", "utf8"):
             broadcast(msg, name+": ")
         else:
-            client.send(bytes("{quit}", "utf8"))
+            client.send(bytes("{salir}", "utf8"))
             client.close()
             del clients[client]
-            if len(clients) == 0:
+            if len(clients) == 0: #Si no hay clientes, el servidor se cierra
                 SERVER.close()
                 sys.exit(0)
                 break
-            broadcast(bytes("%s has left the chat." % name, "utf8"))
+            broadcast(bytes("%s ha dejado el chat." % name, "utf8"))
             break
-        print(clients)
 
+def broadcast(msg, name=""):  #Name es el identificador de cada usuario. Envía un broadcast, este es el texto por defecto, es un chat global.
+    for client in clients:
+        client.send(bytes(name, "utf8")+msg)
 
-def broadcast(msg, prefix=""):  # prefix is for name identification.
-    """Broadcasts a message to all the clients."""
-    #if msg = "/unicast":
-
-    for sock in clients:
-        sock.send(bytes(prefix, "utf8")+msg)
-
-def multicast()
-def unicast(msg,name):
-    nameunicast = re.findall(r'\w*(?=::)',bytes(msg).decode("utf8"))
+def multicast(msg,name): #Al validar que es para uno o varios usuarios, se extrae del mensaje los nicknames destinos con regex, enviando a cada uno con un ciclo for el mensaje de origen.
+    nameunicast = re.findall(r'((?<=\/)\w*)(?!=::)',bytes(msg).decode("utf8"))
     msgunicast = re.findall(r'(?<=::).*',bytes(msg).decode("utf8"))
-    clientunicast = list(clients.keys())[list(clients.values()).index(nameunicast[0])]
-    clientunicast.send(bytes(name+":"+msgunicast[0],"utf8"))
-
+    for i in range(len(nameunicast)):
+        for client, nombre in clients.items():
+            if nombre == nameunicast[i]:
+                client.send(bytes(name+": "+msgunicast[0],"utf8"))
         
 clients = {}
 addresses = {}
@@ -73,8 +64,8 @@ SERVER.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 SERVER.bind(ADDR)
 
 if __name__ == "__main__":
-    SERVER.listen(5)
-    print("Waiting for connection...")
+    SERVER.listen(10)
+    print("Esperando conexión...")
     ACCEPT_THREAD = Thread(target=accept_incoming_connections)
     ACCEPT_THREAD.start()
     ACCEPT_THREAD.join()
