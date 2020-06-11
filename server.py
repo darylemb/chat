@@ -3,6 +3,7 @@ from socket import AF_INET, SOCK_STREAM
 from threading import Thread
 import sys
 import re
+import os
 
 def accept_incoming_connections():
     """Revisa las conexiones entrantes"""
@@ -54,7 +55,7 @@ def multicast(msg,name): #Al validar que es para uno o varios usuarios, se extra
 clients = {}
 addresses = {}
 
-HOST = ''
+HOST = os.popen('hostname -I').read().strip()#Obtiene la IP del equipo para establecer la dirección del servidor
 PORT = 33002
 BUFSIZ = 1024
 ADDR = (HOST, PORT)
