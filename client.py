@@ -61,7 +61,7 @@ send_button = Button(root, text="Send", command=send)
 send_button.pack()
 root.protocol("WM_DELETE_WINDOW", on_closing)
 #Conexión al servidor
-HOST = os.popen('hostname -I').read().strip() #Función que indica la IP desde la que se está conectando el cliente
+HOST = '192.168.0.100'#Dirección del servidor al cual se va a conectar
 PORT = 33002 #Puerto por el que se establece la conexión
 BUFSIZ = 1024 #Tamaño del buffer a enviar/recibir
 ADDR = (HOST, PORT) #Tupla de dirección para clase socket
